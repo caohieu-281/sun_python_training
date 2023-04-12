@@ -1,4 +1,6 @@
 from django.urls import path
 from . import views
 
-urlpatterns = []
+urlpatterns = [path('', views.index, name='index'),]
+
+# urlpatterns += [path('catalog/', include('catalog.urls')),]
