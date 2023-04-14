@@ -29,7 +29,12 @@ class Book(models.Model):
 
     # Create m-n relationship between book-genre
     genre = models.ManyToManyField(Genre, help_text=_('Select a genre for this book'))
+    def display_genre(self):
+        """Create a string for the Genre. This is required to display genre in Admin."""
+        return ', '.join(genre.name for genre in self.genre.all()[:3])
 
+    display_genre.short_description = 'Genre'
+    
     def __str__(self):
         return self.title
 
@@ -84,3 +89,4 @@ class Language(models.Model):
                     help_text=_('Enter the book\'s language'))
     def __str__(self):
         return self.language_name
+        
