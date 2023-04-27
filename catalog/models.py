@@ -2,6 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext as _
 import uuid
+from django.contrib.auth.models import User
+from datetime import date
 
 # Create your models here.
 class Genre(models.Model):
@@ -29,7 +31,12 @@ class Book(models.Model):
 
     # Create m-n relationship between book-genre
     genre = models.ManyToManyField(Genre, help_text=_('Select a genre for this book'))
+    def display_genre(self):
+        """Create a string for the Genre. This is required to display genre in Admin."""
+        return ', '.join(genre.name for genre in self.genre.all()[:3])
 
+    display_genre.short_description = 'Genre'
+    
     def __str__(self):
         return self.title
 
@@ -42,6 +49,7 @@ class BookInstance(models.Model):
     book = models.ForeignKey('Book', on_delete=models.RESTRICT, null=True)
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null=True, blank=True)
+    borrower = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     LOAN_STATUS = (
         ('m', 'Maintenance'),
@@ -56,13 +64,19 @@ class BookInstance(models.Model):
         blank=True,
         default='m',
         help_text=_('Book availability'),
-    )
-
+    )    
     class Meta:
         ordering = ['due_back']
+        permissions = (("can_mark_returned", "Set book as returned"),)
 
     def __str__(self):
         return f'{self.id} ({self.book.title})'
+        
+
+    @property
+    def is_overdue(self):
+        """Determines if the book is overdue based on due date and current date."""
+        return bool(self.due_back and date.today() > self.due_back)
 
 class Author(models.Model):
     first_name = models.CharField(max_length=100)
@@ -84,3 +98,4 @@ class Language(models.Model):
                     help_text=_('Enter the book\'s language'))
     def __str__(self):
         return self.language_name
+        
